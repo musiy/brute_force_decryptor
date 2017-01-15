@@ -152,10 +152,10 @@ void decryptCypher(int startRange, int endRange)
 try
 {
 	/*
-	Атакуемый файл имеет следующий формат:
-	1. 8 байт initial value для Triple DES
-	2. Зашифрованный блок
-	3. 32 байта SHA256 от оригинального текста
+	Target file has the following format:
+	1. 8 bytes of initial value for Triple DES
+	2. encrypted block
+	3. 32 bytes of SHA256 from original text
 	*/
 
 	for (int i = startRange; i < endRange; ++i)
