@@ -34,10 +34,15 @@ using CryptoPP::StreamTransformationFilter;
 #include "md5.h"
 #include "sha.h"
 
+// Just a convinient type to handle byte array
 using ByteVector = std::vector<byte>;
-constexpr int TOTAL_NUMBER_OF_VALUES = 62 * 62 * 62;
-constexpr char * ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-constexpr char * RESULT_FILE_NAME = "out.dat";
+
+// Alphabet and it dimension
+const char ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+constexpr int ALPHABET_LENGTH = sizeof(ALPHABET)/sizeof(char) - 1;
+constexpr int TOTAL_NUMBER_OF_VALUES = ALPHABET_LENGTH * ALPHABET_LENGTH * ALPHABET_LENGTH;
+
+const char * RESULT_FILE_NAME = "out.dat";
 
 // String blocks from input file
 ByteVector g_initVector;
@@ -58,7 +63,7 @@ void decryptCypher(int startRange, int endRange);
 int main(int argc, char ** argv)
 {
 	assert("000" == getPasswordByValue(0));
-	assert("ZZZ" == getPasswordByValue(TOTAL_NUMBER_OF_VALUES -1));
+	assert("ZZZ" == getPasswordByValue(TOTAL_NUMBER_OF_VALUES - 1));
 
 	if (argc != 2)
 	{
@@ -81,7 +86,7 @@ int main(int argc, char ** argv)
 #endif
 		int numberThreads = std::thread::hardware_concurrency();
 		std::vector<std::thread> pool(numberThreads);
-		int subrangeSize = 62*62*62 / numberThreads;
+		int subrangeSize = TOTAL_NUMBER_OF_VALUES / numberThreads;
 
 		for (int i = 0; i < numberThreads; ++i)
 		{
@@ -126,18 +131,18 @@ void saveBinaryToFile(const std::string & fileName, const std::string & text)
 }
 
 /*
-   Calculate password by value from range [0..62^3-1].
+   Calculate password by value from range [0..ALPHABET_LENGTH^3-1].
    Alphabet: 0..9a-zA-Z (i.e. 62-base scale of notation).
    The max value is 62^2*61 + 62^1*61 + 61^0*61 = 62^3-1 = 238'327
 */
 inline std::string getPasswordByValue(int value) {
 	
-	int pows62[] = { 3844, 62, 1}; // powers of 62
+	int pows[] = { ALPHABET_LENGTH*ALPHABET_LENGTH, ALPHABET_LENGTH, 1}; // powers of ALPHABET_LENGTH
 	char data[4]{};
 
 	for (int i = 0; i < 3; ++i) {
-		int pos = value / pows62[i];
-		value = value % pows62[i];
+		int pos = value / pows[i];
+		value = value % pows[i];
 		data[i] = ALPHABET[pos];
 	}
 	return data;
@@ -176,7 +181,7 @@ try
 		CBC_Mode<DES_EDE2>::Decryption decryptEngine;
 		decryptEngine.SetKeyWithIV(key, key.size(), g_initVector.data());
 
-		StringSource s(g_cypher, true,
+		StringSource stringSource(g_cypher, true,
 			new StreamTransformationFilter(decryptEngine,
 				new StringSink(recovered), CryptoPP::BlockPaddingSchemeDef::NO_PADDING
 			)
